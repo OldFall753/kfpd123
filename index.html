@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍉 水果喜好调查 - kfpd123</title>
+    <style>
+        /* ===== 全局重置 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #fdf6ec 0%, #fce4d6 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* ===== 主容器 ===== */
+        .container {
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+            max-width: 520px;
+            width: 100%;
+            padding: 40px 32px;
+            position: relative;
+            overflow: hidden;
+            min-height: 480px;
+        }
+
+        /* ===== 页面切换 ===== */
+        .page {
+            display: none;
+            animation: fadeIn 0.35s ease;
+        }
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== 子页面特殊动画（从右侧滑入） ===== */
+        .page.sub-page.active {
+            animation: slideIn 0.35s ease;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* ===== 步骤指示器 ===== */
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            transition: all 0.3s;
+        }
+        .step-dot.active {
+            background: #ff7a45;
+            width: 28px;
+            border-radius: 5px;
+        }
+        .step-dot.done {
+            background: #95de64;
+        }
+
+        /* ===== 子页面指示器（小圆点区别） ===== */
+        .sub-badge {
+            display: inline-block;
+            background: #fff7e6;
+            color: #d46b08;
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 1px solid #ffd591;
+        }
+
+        /* ===== 标题 ===== */
+        h1 {
+            font-size: 24px;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .subtitle {
+            color: #666;
+            text-align: center;
+            font-size: 15px;
+            margin-bottom: 28px;
+            line-height: 1.5;
+        }
+
+        /* ===== 第一页：多选卡片 ===== */
+        .checkbox-group {
+            background: #fafafa;
+            border: 2px solid #f0f0f0;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            transition: border-color 0.3s;
+        }
+        .checkbox-group:focus-within {
+            border-color: #ff7a45;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            margin: 6px 0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .checkbox-item:hover {
+            background: #fff2e8;
+        }
+        .checkbox-item input[type="checkbox"] {
+            display: none;
+        }
+        .checkbox-item .custom-check {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #d9d9d9;
+            border-radius: 6px;
+            margin-right: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .checkbox-item input:checked + .custom-check {
+            background: #ff7a45;
+            border-color: #ff7a45;
+        }
+        .checkbox-item input:checked + .custom-check::after {
+            content: "✓";
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .checkbox-item .fruit-icon {
+            font-size: 26px;
+            margin-right: 12px;
+        }
+        .checkbox-item .fruit-name {
+            font-size: 17px;
+            font-weight: 500;
+            color: #1a1a2e;
+        }
+        .checkbox-item.selected {
+            background: #fff2e8;
+        }
+
+        /* ===== 第二页：选项卡片 ===== */
+        .fruit-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .fruit-card {
+            display: flex;
+            align-items: center;
+            padding: 18px 20px;
+            background: #fafafa;
+            border: 2px solid #f0f0f0;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .fruit-card:hover {
+            background: #fff2e8;
+            border-color: #ff7a45;
+            transform: translateX(6px);
+            box-shadow: 0 4px 12px rgba(255, 122, 69, 0.15);
+        }
+        .fruit-card .fruit-icon {
+            font-size: 32px;
+            margin-right: 18px;
+        }
+        .fruit-card .fruit-info {
+            flex: 1;
+        }
+        .fruit-card .fruit-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+        .fruit-card .fruit-hint {
+            font-size: 13px;
+            color: #999;
+            margin-top: 2px;
+        }
+        .fruit-card .arrow {
+            color: #ccc;
+            font-size: 20px;
+        }
+
+        /* ===== 介绍子页 ===== */
+        .intro-content {
+            text-align: center;
+            padding: 10px 0;
+        }
+        .intro-content .big-icon {
+            font-size: 72px;
+            display: block;
+            margin-bottom: 12px;
+        }
+        .intro-content h2 {
+            font-size: 26px;
+            color: #1a1a2e;
+            margin-bottom: 12px;
+        }
+        .intro-content .desc {
+            font-size: 15px;
+            color: #555;
+            line-height: 1.8;
+            margin-bottom: 8px;
+            text-align: left;
+            background: #fafafa;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border-left: 4px solid #ff7a45;
+        }
+        .intro-content .nutrition {
+            font-size: 14px;
+            color: #888;
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: #f6ffed;
+            border-radius: 10px;
+            border: 1px solid #b7eb8f;
+        }
+
+        /* ===== 子页导航按钮 ===== */
+        .sub-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 24px;
+            justify-content: center;
+        }
+        .sub-nav .nav-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px 10px;
+            border: 2px solid #f0f0f0;
+            border-radius: 12px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: center;
+            transition: all 0.2s;
+            color: #333;
+        }
+        .sub-nav .nav-btn:hover {
+            border-color: #ff7a45;
+            background: #fff2e8;
+            color: #ff7a45;
+        }
+        .sub-nav .nav-btn.back-btn {
+            background: #fafafa;
+            border-color: #e8e8e8;
+        }
+        .sub-nav .nav-btn.back-btn:hover {
+            background: #f0f0f0;
+            border-color: #d9d9d9;
+            color: #666;
+        }
+
+        /* ===== 按钮 ===== */
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        .btn {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-align: center;
+        }
+        .btn-primary {
+            background: #ff7a45;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #ff6200;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 122, 69, 0.3);
+        }
+        .btn-primary:disabled {
+            background: #d9d9d9;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #555;
+        }
+        .btn-secondary:hover {
+            background: #e8e8e8;
+        }
+        .btn-success {
+            background: #52c41a;
+            color: #fff;
+        }
+        .btn-success:hover {
+            background: #45b015;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(82, 196, 26, 0.3);
+        }
+
+        /* ===== 第三页：总结 ===== */
+        .summary-card {
+            background: linear-gradient(135deg, #fff7e6, #fff2e8);
+            border: 2px solid #ffd591;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .summary-card .summary-label {
+            font-size: 14px;
+            color: #d46b08;
+            margin-bottom: 10px;
+        }
+        .summary-card .summary-items {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .summary-card .summary-item {
+            font-size: 40px;
+            padding: 10px 16px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        .summary-card .summary-item .s-name {
+            display: block;
+            font-size: 14px;
+            color: #555;
+            margin-top: 4px;
+        }
+        .summary-empty {
+            text-align: center;
+            color: #bbb;
+            font-size: 16px;
+            padding: 30px 0;
+        }
+
+        /* ===== 页脚 ===== */
+        .footer {
+            text-align: center;
+            color: #ccc;
+            font-size: 12px;
+            margin-top: 20px;
+            border-top: 1px solid #f5f5f5;
+            padding-top: 16px;
+        }
+
+        /* ===== 移动端适配 ===== */
+        @media (max-width: 480px) {
+            .container {
+                padding: 24px 18px;
+                border-radius: 16px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            .fruit-card {
+                padding: 14px 16px;
+            }
+            .fruit-card .fruit-icon {
+                font-size: 26px;
+                margin-right: 14px;
+            }
+            .intro-content .big-icon {
+                font-size: 56px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- ========== 步骤指示器 ========== -->
+    <div class="step-indicator">
+        <div class="step-dot active" id="dot1"></div>
+        <div class="step-dot" id="dot2"></div>
+        <div class="step-dot" id="dot3"></div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--                    第一页：问卷页                              -->
+    <!-- ============================================================ -->
+    <div id="page1" class="page active">
+        <h1>🍉 水果喜好调查</h1>
+        <p class="subtitle">请选择您喜欢吃的水果（可多选）</p>
+
+        <div class="checkbox-group">
+            <label class="checkbox-item" onclick="toggleCheck(this, '苹果')">
+                <input type="checkbox" value="苹果">
+                <span class="custom-check"></span>
+                <span class="fruit-icon">🍎</span>
+                <span class="fruit-name">苹果</span>
+            </label>
+            <label class="checkbox-item" onclick="toggleCheck(this, '香蕉')">
+                <input type="checkbox" value="香蕉">
+                <span class="custom-check"></span>
+                <span class="fruit-icon">🍌</span>
+                <span class="fruit-name">香蕉</span>
+            </label>
+            <label class="checkbox-item" onclick="toggleCheck(this, '葡萄')">
+                <input type="checkbox" value="葡萄">
+                <span class="custom-check"></span>
+                <span class="fruit-icon">🍇</span>
+                <span class="fruit-name">葡萄</span>
+            </label>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn btn-primary" id="btnPage1Next" onclick="saveAndNext()" disabled>
+                下一步 →
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--              第二页：选项母页（水果目录）                      -->
+    <!-- ============================================================ -->
+    <div id="page2" class="page">
+        <h1>🍎 水果百科</h1>
+        <p class="subtitle">点击任意水果，查看详细介绍</p>
+
+        <div class="fruit-grid">
+            <div class="fruit-card" onclick="showSubPage('apple')">
+                <span class="fruit-icon">🍎</span>
+                <div class="fruit-info">
+                    <div class="fruit-name">苹果</div>
+                    <div class="fruit-hint">点击查看介绍</div>
+                </div>
+                <span class="arrow">→</span>
+            </div>
+            <div class="fruit-card" onclick="showSubPage('banana')">
+                <span class="fruit-icon">🍌</span>
+                <div class="fruit-info">
+                    <div class="fruit-name">香蕉</div>
+                    <div class="fruit-hint">点击查看介绍</div>
+                </div>
+                <span class="arrow">→</span>
+            </div>
+            <div class="fruit-card" onclick="showSubPage('grape')">
+                <span class="fruit-icon">🍇</span>
+                <div class="fruit-info">
+                    <div class="fruit-name">葡萄</div>
+                    <div class="fruit-hint">点击查看介绍</div>
+                </div>
+                <span class="arrow">→</span>
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn btn-secondary" onclick="goToPage(1)">← 上一页</button>
+            <button class="btn btn-primary" onclick="goToPage(3)">下一页 →</button>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--          子页：苹果介绍（属于第二页的子页面）                  -->
+    <!-- ============================================================ -->
+    <div id="sub-apple" class="page sub-page">
+        <span class="sub-badge">📖 水果百科 · 子页面</span>
+        <div class="intro-content">
+            <span class="big-icon">🍎</span>
+            <h2>苹果</h2>
+            <div class="desc">
+                🍎 苹果是蔷薇科苹果属植物的果实，是全球最受欢迎的水果之一。
+                苹果富含维生素C和膳食纤维，有"一天一苹果，医生远离我"的说法。
+                苹果的品种繁多，有红富士、嘎啦、金帅等，口感从脆甜到绵软各具特色。
+            </div>
+            <div class="nutrition">
+                🥗 营养价值：富含维生素C、钾、膳食纤维 · 热量约 52 kcal/100g
+            </div>
+        </div>
+        <div class="sub-nav">
+            <button class="nav-btn back-btn" onclick="goToPage(2)">← 返回目录</button>
+            <button class="nav-btn" onclick="showSubPage('banana')">🍌 看香蕉</button>
+            <button class="nav-btn" onclick="showSubPage('grape')">🍇 看葡萄</button>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--          子页：香蕉介绍（属于第二页的子页面）                  -->
+    <!-- ============================================================ -->
+    <div id="sub-banana" class="page sub-page">
+        <span class="sub-badge">📖 水果百科 · 子页面</span>
+        <div class="intro-content">
+            <span class="big-icon">🍌</span>
+            <h2>香蕉</h2>
+            <div class="desc">
+                🍌 香蕉是芭蕉科芭蕉属植物的果实，原产于东南亚热带地区。
+                香蕉富含钾元素和碳水化合物，是运动员和健身爱好者的首选水果。
+                香蕉成熟后口感软糯香甜，不仅可以鲜食，还可用于制作奶昔、蛋糕等美食。
+            </div>
+            <div class="nutrition">
+                🥗 营养价值：富含钾、维生素B6、维生素C · 热量约 89 kcal/100g
+            </div>
+        </div>
+        <div class="sub-nav">
+            <button class="nav-btn" onclick="showSubPage('apple')">🍎 看苹果</button>
+            <button class="nav-btn back-btn" onclick="goToPage(2)">← 返回目录</button>
+            <button class="nav-btn" onclick="showSubPage('grape')">🍇 看葡萄</button>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--          子页：葡萄介绍（属于第二页的子页面）                  -->
+    <!-- ============================================================ -->
+    <div id="sub-grape" class="page sub-page">
+        <span class="sub-badge">📖 水果百科 · 子页面</span>
+        <div class="intro-content">
+            <span class="big-icon">🍇</span>
+            <h2>葡萄</h2>
+            <div class="desc">
+                🍇 葡萄是葡萄科葡萄属木质藤本植物的果实，是世界上栽培最广的水果之一。
+                葡萄富含花青素和白藜芦醇，具有很好的抗氧化作用。
+                葡萄不仅可以鲜食，还可酿酒、制干、榨汁，用途极为广泛。
+            </div>
+            <div class="nutrition">
+                🥗 营养价值：富含花青素、维生素K、维生素C · 热量约 69 kcal/100g
+            </div>
+        </div>
+        <div class="sub-nav">
+            <button class="nav-btn" onclick="showSubPage('apple')">🍎 看苹果</button>
+            <button class="nav-btn" onclick="showSubPage('banana')">🍌 看香蕉</button>
+            <button class="nav-btn back-btn" onclick="goToPage(2)">← 返回目录</button>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--                   第三页：总结页                              -->
+    <!-- ============================================================ -->
+    <div id="page3" class="page">
+        <h1>📋 填写总结</h1>
+        <p class="subtitle">您在问卷中做出的选择</p>
+
+        <div class="summary-card" id="summaryCard">
+            <div class="summary-label">✅ 您喜欢吃的水果</div>
+            <div class="summary-items" id="summaryItems"></div>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn btn-secondary" onclick="goToPage(2)">← 上一页</button>
+            <button class="btn btn-success" onclick="goToPage(1)">🔄 重新填写</button>
+        </div>
+
+        <div class="footer">
+            kfpd123 · 水果喜好调查
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // ================================================================
+    //  数据存储
+    // ================================================================
+    const FRUITS = ['苹果', '香蕉', '葡萄'];
+
+    // 水果的图标映射
+    const FRUIT_ICONS = {
+        '苹果': '🍎',
+        '香蕉': '🍌',
+        '葡萄': '🍇'
+    };
+
+    const FRUIT_KEYS = {
+        'apple': '苹果',
+        'banana': '香蕉',
+        'grape': '葡萄'
+    };
+
+    // ================================================================
+    //  第一页：多选逻辑
+    // ================================================================
+    let selectedFruits = [];
+
+    function toggleCheck(el, fruit) {
+        const checkbox = el.querySelector('input[type="checkbox"]');
+        checkbox.checked = !checkbox.checked;
+
+        if (checkbox.checked) {
+            el.classList.add('selected');
+            if (!selectedFruits.includes(fruit)) {
+                selectedFruits.push(fruit);
+            }
+        } else {
+            el.classList.remove('selected');
+            selectedFruits = selectedFruits.filter(f => f !== fruit);
+        }
+
+        // 更新"下一步"按钮状态
+        document.getElementById('btnPage1Next').disabled = selectedFruits.length === 0;
+    }
+
+    // ================================================================
+    //  页面切换（核心：SPA 无刷新跳转）
+    // ================================================================
+    function goToPage(pageNum) {
+        // 隐藏所有页面
+        const allPages = document.querySelectorAll('.page');
+        allPages.forEach(p => p.classList.remove('active'));
+
+        // 显示目标页面
+        const target = document.getElementById('page' + pageNum);
+        if (target) {
+            target.classList.add('active');
+        }
+
+        // 更新步骤指示器
+        updateDots(pageNum);
+
+        // 如果到了第三页，渲染总结内容
+        if (pageNum === 3) {
+            renderSummary();
+        }
+    }
+
+    // ================================================================
+    //  子页面切换（属于第二页的子页面，不影响步骤指示器）
+    // ================================================================
+    function showSubPage(key) {
+        // 隐藏所有页面
+        const allPages = document.querySelectorAll('.page');
+        allPages.forEach(p => p.classList.remove('active'));
+
+        // 显示对应的子页
+        const target = document.getElementById('sub-' + key);
+        if (target) {
+            target.classList.add('active');
+        }
+
+        // 子页面仍然标记"第二页"的步骤点
+        updateDots(2);
+    }
+
+    // ================================================================
+    //  步骤指示器更新
+    // ================================================================
+    function updateDots(activePage) {
+        for (let i = 1; i <= 3; i++) {
+            const dot = document.getElementById('dot' + i);
+            dot.classList.remove('active', 'done');
+            if (i === activePage) {
+                dot.classList.add('active');
+            } else if (i < activePage) {
+                dot.classList.add('done');
+            }
+        }
+    }
+
+    // ================================================================
+    //  第一页 → 保存并跳转
+    // ================================================================
+    function saveAndNext() {
+        if (selectedFruits.length === 0) return;
+
+        // 保存到 localStorage
+        localStorage.setItem('kfpd123_selected', JSON.stringify(selectedFruits));
+        localStorage.setItem('kfpd123_timestamp', new Date().toLocaleString());
+
+        // 跳转到第二页
+        goToPage(2);
+    }
+
+    // ================================================================
+    //  第三页：渲染总结
+    // ================================================================
+    function renderSummary() {
+        const summaryItems = document.getElementById('summaryItems');
+        const saved = localStorage.getItem('kfpd123_selected');
+
+        if (!saved) {
+            // 没有数据，从当前 selectedFruits 获取
+            if (selectedFruits.length === 0) {
+                summaryItems.innerHTML = '<div class="summary-empty">暂未选择任何水果</div>';
+                return;
+            }
+            renderFruits(selectedFruits);
+            return;
+        }
+
+        const fruits = JSON.parse(saved);
+        if (fruits.length === 0) {
+            summaryItems.innerHTML = '<div class="summary-empty">暂未选择任何水果</div>';
+            return;
+        }
+        renderFruits(fruits);
+    }
+
+    function renderFruits(fruits) {
+        const summaryItems = document.getElementById('summaryItems');
+        summaryItems.innerHTML = fruits.map(f =>
+            `<div class="summary-item">
+                ${FRUIT_ICONS[f] || '🍑'}
+                <span class="s-name">${f}</span>
+            </div>`
+        ).join('');
+    }
+
+    // ================================================================
+    //  页面加载时：恢复已保存的选择
+    // ================================================================
+    window.addEventListener('DOMContentLoaded', function() {
+        const saved = localStorage.getItem('kfpd123_selected');
+        if (saved) {
+            const fruits = JSON.parse(saved);
+            selectedFruits = fruits;
+            // 如果勾选了，更新UI
+            const items = document.querySelectorAll('.checkbox-item');
+            items.forEach(item => {
+                const name = item.querySelector('.fruit-name').textContent;
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                if (fruits.includes(name)) {
+                    checkbox.checked = true;
+                    item.classList.add('selected');
+                }
+            });
+            // 如果已有选择，启用按钮
+            document.getElementById('btnPage1Next').disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>
